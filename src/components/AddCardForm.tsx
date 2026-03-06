@@ -6,7 +6,7 @@ import { Plus, Sparkles, Loader2 } from 'lucide-react';
 
 interface AddCardFormProps {
   onAddCard: (word: string, definition: string) => Promise<void>;
-  onAddCardWithMnemonic: (word: string, definition: string, mnemonic: string, sentence: string) => Promise<void>;
+  onAddCardWithMnemonic: (word: string, definition: string, mnemonic: string) => Promise<void>;
 }
 
 export default function AddCardForm({ onAddCard, onAddCardWithMnemonic }: AddCardFormProps) {
@@ -16,7 +16,7 @@ export default function AddCardForm({ onAddCard, onAddCardWithMnemonic }: AddCar
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const generateMnemonic = async (word: string): Promise<{ mnemonic: string; sentence: string } | null> => {
+  const generateMnemonic = async (word: string): Promise<{ mnemonic: string } | null> => {
     try {
       const response = await fetch('/api/generate-mnemonic', {
         method: 'POST',
@@ -31,7 +31,9 @@ export default function AddCardForm({ onAddCard, onAddCardWithMnemonic }: AddCar
         throw new Error(data.error || 'Failed to generate mnemonic');
       }
 
-      return await response.json();
+      const data = await response.json();
+      // Just use mnemonic (synonyms), ignore sentence
+      return { mnemonic: data.mnemonic || data.sentence || '' };
     } catch (err) {
       console.error('Error generating mnemonic:', err);
       return null;
@@ -50,15 +52,14 @@ export default function AddCardForm({ onAddCard, onAddCardWithMnemonic }: AddCar
     setIsLoading(true);
 
     try {
-      // Try to generate mnemonic
+      // Try to generate mnemonic (synonyms)
       const mnemonicData = await generateMnemonic(word.trim());
 
-      if (mnemonicData) {
+      if (mnemonicData && mnemonicData.mnemonic) {
         await onAddCardWithMnemonic(
           word.trim(),
           definition.trim(),
-          mnemonicData.mnemonic,
-          mnemonicData.sentence
+          mnemonicData.mnemonic
         );
       } else {
         // Fallback: add card without mnemonic

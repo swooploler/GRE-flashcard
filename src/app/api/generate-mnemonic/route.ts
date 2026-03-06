@@ -60,48 +60,46 @@ export async function POST(request: NextRequest): Promise<NextResponse<MnemonicR
       );
     }
 
-    // Get OpenRouter API key
-    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    // Get Gemini API key
+    const geminiKey = process.env.GEMINI_API_KEY;
     
-    if (!openRouterKey || openRouterKey === 'your_openrouter_api_key') {
+    if (!geminiKey || geminiKey === 'your_gemini_api_key_here') {
       return NextResponse.json(
-        { error: 'OpenRouter API key is not configured. Add OPENROUTER_API_KEY to .env.local' },
+        { error: 'Gemini API key is not configured. Add GEMINI_API_KEY to .env.local' },
         { status: 500 }
       );
     }
 
-    // Call OpenRouter API with free model
+    // Call Gemini API directly
     const response = await fetch(
-      'https://openrouter.ai/api/v1/chat/completions',
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openRouterKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-          'X-Title': 'GRE Flashcards',
         },
         body: JSON.stringify({
-          model: 'meta-llama/llama-3.2-1b-instruct',
-          messages: [
+          contents: [
             {
-              role: 'system',
-              content: 'You are a GRE vocabulary expert. Always respond with valid JSON only.'
-            },
-            {
-              role: 'user',
-              content: `For the word "${trimmedWord}", provide: 1) A memorable mnemonic, 2) An example sentence. Respond ONLY with JSON: {"mnemonic": "...", "sentence": "..."}`
+              parts: [
+                {
+                  text: `You are a GRE vocabulary expert specializing in memory techniques. Always respond with valid JSON only.\n\nFor the word "${trimmedWord}", create: 1) A memorable mnemonic (memory tip using word associations), 2) An example sentence using the word. Respond ONLY with JSON: {"mnemonic": "...", "sentence": "..."}`
+                }
+              ]
             }
           ],
-          temperature: 0.7,
-          max_tokens: 100,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 200,
+            responseMimeType: 'application/json',
+          },
         })
       }
     );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('OpenRouter API error:', response.status, errorData);
+      console.error('Gemini API error:', response.status, errorData);
       return NextResponse.json(
         { error: errorData.error?.message || `AI service error: ${response.status}` },
         { status: response.status }
@@ -109,9 +107,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MnemonicR
     }
 
     const data = await response.json();
-    
-    // Parse the response
-    const generatedText = data.choices?.[0]?.message?.content;
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!generatedText) {
       return NextResponse.json(

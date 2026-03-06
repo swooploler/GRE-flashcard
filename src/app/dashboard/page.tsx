@@ -2,36 +2,56 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Brain, 
-  LogOut, 
-  CheckCircle2, 
+import {
+  Brain,
+  LogOut,
+  CheckCircle2,
   Circle,
   Loader2,
   LayoutGrid,
-  List
+  List,
+  Wand2,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useFlashcards } from '@/lib/useFlashcards';
 import Flashcard, { FlashcardData } from '@/components/Flashcard';
 import AddCardForm from '@/components/AddCardForm';
+import BulkImportModal from '@/components/BulkImportModal';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 type ViewMode = 'all' | 'mastered' | 'learning';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
-  const { 
-    cards, 
-    loading, 
-    error, 
-    addCard, 
-    addCardWithMnemonic, 
-    toggleMastered, 
-    deleteCard 
+  const {
+    cards,
+    loading,
+    error,
+    addCard,
+    addCardWithMnemonic,
+    toggleMastered,
+    deleteCard,
+    deleteAllCards,
+    bulkGenerateCards
   } = useFlashcards();
   
   const [viewMode, setViewMode] = useState<ViewMode>('all');
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+
+  const handleClearAll = async () => {
+    setIsClearing(true);
+    try {
+      await deleteAllCards();
+      setShowClearConfirm(false);
+    } catch (err) {
+      console.error('Failed to clear all cards:', err);
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   const filteredCards = useMemo(() => {
     switch (viewMode) {
@@ -114,6 +134,16 @@ export default function Dashboard() {
                 </span>
               </div>
               
+              {cards.length > 0 && (
+                <button
+                  onClick={() => setShowClearConfirm(true)}
+                  className="p-2 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-[#171717] transition-colors"
+                  title="Clear all cards"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              )}
+              
               <button
                 onClick={handleSignOut}
                 className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-[#171717] transition-colors"
@@ -178,8 +208,18 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="sm:ml-auto w-full sm:w-auto">
-            <AddCardForm 
+          <div className="sm:ml-auto flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            {/* Magic Import Button */}
+            <button
+              onClick={() => setIsBulkImportOpen(true)}
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 hover:border-violet-500/30 transition-all duration-200"
+            >
+              <Wand2 className="w-5 h-5" />
+              <span>Magic Import</span>
+            </button>
+            
+            {/* Add Card Form */}
+            <AddCardForm
               onAddCard={addCard}
               onAddCardWithMnemonic={addCardWithMnemonic}
             />
@@ -229,6 +269,59 @@ export default function Dashboard() {
           )}
         </ErrorBoundary>
       </main>
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onBulkImport={bulkGenerateCards}
+      />
+
+      {/* Clear All Confirmation Dialog */}
+      <AnimatePresence>
+        {showClearConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowClearConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#171717] border border-white/[0.06] rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-red-500/10">
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Clear All Cards</h3>
+              </div>
+              <p className="text-zinc-400 text-sm mb-6">
+                Are you sure you want to delete all {cards.length} flashcards? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  className="flex-1 px-4 py-2 rounded-lg bg-[#0a0a0a] border border-white/[0.06] text-zinc-300 hover:bg-[#222] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleClearAll}
+                  disabled={isClearing}
+                  className="flex-1 px-4 py-2 rounded-lg bg-red-500 text-white font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+                >
+                  {isClearing ? 'Deleting...' : 'Delete All'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

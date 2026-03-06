@@ -9,7 +9,6 @@ export interface FlashcardData {
   word: string;
   definition: string;
   mnemonic?: string;
-  sentence?: string;
   mastered: boolean;
   createdAt: number;
 }
@@ -116,22 +115,14 @@ export default function Flashcard({ card, onToggleMastered, onDelete }: Flashcar
             </p>
           </div>
 
-          {/* Mnemonic */}
-          <div className="mb-4">
+          {/* Synonyms */}
+          <div className="mt-auto">
             <div className="flex items-center gap-1.5 text-xs text-zinc-500 uppercase tracking-wider mb-1.5">
               <Sparkles className="w-3 h-3" />
-              <span>Mnemonic</span>
+              <span>Synonyms</span>
             </div>
             <p className="text-sm text-amber-400/90 leading-relaxed">
-              {card.mnemonic || 'Generating mnemonic...'}
-            </p>
-          </div>
-
-          {/* Example Sentence */}
-          <div className="mt-auto">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1.5">Example</p>
-            <p className="text-sm text-zinc-300 italic leading-relaxed">
-              {card.sentence || 'Generating example...'}
+              {card.mnemonic || 'No synonyms available'}
             </p>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, ReactNode } from 'react';
+import { useEffect, ReactNode, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -20,7 +20,7 @@ function isValidRedirect(url: string | null): boolean {
   return url.startsWith('/') && !url.startsWith('//') && !url.includes('\\');
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+function ProtectedRouteContent({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -52,4 +52,19 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   return <>{children}</>;
+}
+
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+          <p className="text-zinc-500 text-sm">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ProtectedRouteContent>{children}</ProtectedRouteContent>
+    </Suspense>
+  );
 }
