@@ -11,6 +11,9 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "GRE Flashcards - AI-Powered Vocabulary Learning",
   description: "Master GRE vocabulary with AI-generated mnemonics and real-time flashcard synchronization",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
