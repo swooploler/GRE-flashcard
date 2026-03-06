@@ -11,12 +11,13 @@ import {
   LayoutGrid,
   List,
   Wand2,
-  Trash2
+  Trash2,
+  Plus
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useFlashcards } from '@/lib/useFlashcards';
 import Flashcard, { FlashcardData } from '@/components/Flashcard';
-import AddCardForm from '@/components/AddCardForm';
+import AddWordModal from '@/components/AddWordModal';
 import BulkImportModal from '@/components/BulkImportModal';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -38,6 +39,7 @@ export default function Dashboard() {
   
   const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isAddWordOpen, setIsAddWordOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
@@ -218,11 +220,13 @@ export default function Dashboard() {
               <span>Magic Import</span>
             </button>
             
-            {/* Add Card Form */}
-            <AddCardForm
-              onAddCard={addCard}
-              onAddCardWithMnemonic={addCardWithMnemonic}
-            />
+            <button
+              onClick={() => setIsAddWordOpen(true)}
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/30 transition-all duration-200"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Add Word</span>
+            </button>
           </div>
         </div>
 
@@ -275,6 +279,13 @@ export default function Dashboard() {
         isOpen={isBulkImportOpen}
         onClose={() => setIsBulkImportOpen(false)}
         onBulkImport={bulkGenerateCards}
+      />
+
+      {/* Add Word Modal */}
+      <AddWordModal
+        isOpen={isAddWordOpen}
+        onClose={() => setIsAddWordOpen(false)}
+        onAddCardWithMnemonic={addCardWithMnemonic}
       />
 
       {/* Clear All Confirmation Dialog */}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Check, Trash2 } from 'lucide-react';
+import { Check, Trash2, Sparkles, BookOpen } from 'lucide-react';
 
 export interface FlashcardData {
   id: string;
@@ -30,7 +30,6 @@ export default function Flashcard({ card, onToggleMastered, onDelete }: Flashcar
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsDeleting(true);
-    // Small delay for visual feedback
     setTimeout(() => {
       onDelete(card.id);
     }, 200);
@@ -40,6 +39,19 @@ export default function Flashcard({ card, onToggleMastered, onDelete }: Flashcar
     e.stopPropagation();
     onToggleMastered(card.id);
   };
+
+  // Parse synonyms/mnemonic into an array for display as tags
+  const getSynonyms = () => {
+    if (!card.mnemonic) return [];
+    // Split by comma or newline and filter empty
+    return card.mnemonic
+      .split(/[,\n]/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+      .slice(0, 5); // Limit to 5 tags
+  };
+
+  const synonyms = getSynonyms();
 
   return (
     <motion.div
@@ -79,13 +91,13 @@ export default function Flashcard({ card, onToggleMastered, onDelete }: Flashcar
 
         {/* Back Face */}
         <div 
-          className="flip-card-back absolute inset-0 flex flex-col p-6 rounded-2xl border border-white/[0.06] bg-[#171717] overflow-y-auto"
+          className="flip-card-back absolute inset-0 flex flex-col p-5 rounded-2xl border border-white/[0.06] bg-[#0a0a0a] overflow-y-auto"
           style={{ backfaceVisibility: 'hidden' }}
         >
-          {/* Header with word */}
+          {/* Header with word and actions */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-white">{card.word}</h3>
-            <div className="flex items-center gap-2">
+            <h3 className="text-xl font-semibold text-white capitalize">{card.word}</h3>
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={handleToggleMastered}
                 className={`p-2 rounded-lg transition-all duration-200 ${
@@ -109,22 +121,57 @@ export default function Flashcard({ card, onToggleMastered, onDelete }: Flashcar
 
           {/* Definition */}
           <div className="mb-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1.5">Definition</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Definition</p>
             <p className="text-sm text-zinc-300 leading-relaxed">
               {card.definition || 'Definition not available'}
             </p>
           </div>
 
-          {/* Synonyms */}
-          <div className="mt-auto">
-            <div className="flex items-center gap-1.5 text-xs text-zinc-500 uppercase tracking-wider mb-1.5">
-              <Sparkles className="w-3 h-3" />
-              <span>Synonyms</span>
+          {/* Synonyms as tags */}
+          {synonyms.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-500 uppercase tracking-wider mb-2">
+                <Sparkles className="w-3 h-3 text-violet-400" />
+                <span>Synonyms</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {synonyms.map((synonym, idx) => (
+                  <span 
+                    key={idx}
+                    className="px-2.5 py-1 rounded-md bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs"
+                  >
+                    {synonym}
+                  </span>
+                ))}
+              </div>
             </div>
-            <p className="text-sm text-amber-400/90 leading-relaxed">
-              {card.mnemonic || 'No synonyms available'}
-            </p>
-          </div>
+          )}
+
+          {/* Mnemonic / Explanation */}
+          {card.mnemonic && synonyms.length === 0 && (
+            <div className="mt-auto">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-500 uppercase tracking-wider mb-2">
+                <BookOpen className="w-3 h-3 text-amber-400" />
+                <span>Explanation</span>
+              </div>
+              <p className="text-sm text-amber-400/90 leading-relaxed italic">
+                "{card.mnemonic}"
+              </p>
+            </div>
+          )}
+
+          {/* If no synonyms but has mnemonic, show it as explanation */}
+          {card.mnemonic && synonyms.length > 0 && (
+            <div className="mt-auto">
+              <div className="flex items-center gap-1.5 text-xs text-zinc-500 uppercase tracking-wider mb-2">
+                <BookOpen className="w-3 h-3 text-amber-400" />
+                <span>Explanation</span>
+              </div>
+              <p className="text-sm text-amber-400/90 leading-relaxed italic">
+                "{card.mnemonic}"
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
